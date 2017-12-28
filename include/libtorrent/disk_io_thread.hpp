@@ -288,7 +288,9 @@ namespace aux {
 		disk_io_thread(io_service& ios
 			, counters& cnt
 			, int block_size = 16 * 1024);
+#if TORRENT_USE_ASSERTS
 		~disk_io_thread();
+#endif
 
 		void set_settings(settings_pack const* sett);
 

@@ -4386,8 +4386,15 @@ namespace libtorrent {
 		// the torrent object from there
 		if (m_storage)
 		{
-			m_ses.disk_thread().async_stop_torrent(m_storage
-				, std::bind(&torrent::on_torrent_aborted, shared_from_this()));
+			try {
+				m_ses.disk_thread().async_stop_torrent(m_storage
+					, std::bind(&torrent::on_torrent_aborted, shared_from_this()));
+			} catch (std::exception const&)
+			{
+				m_storage.reset();
+				if (alerts().should_post<cache_flushed_alert>())
+					alerts().emplace_alert<cache_flushed_alert>(get_handle());
+			}
 		}
 		else
 		{
@@ -4426,6 +4433,8 @@ namespace libtorrent {
 		// have been destructed
 		if (m_peer_list) m_peer_list->clear();
 		m_connections.clear();
+		m_num_uploads = 0;
+		m_num_connecting = 0;
 	}
 
 	void torrent::set_super_seeding(bool on)
@@ -5476,8 +5485,8 @@ namespace libtorrent {
 				trigger_optimistic_unchoke();
 			}
 
-			TORRENT_ASSERT(pp->prev_amount_upload == 0);
-			TORRENT_ASSERT(pp->prev_amount_download == 0);
+//			TORRENT_ASSERT(pp->prev_amount_upload == 0);
+//			TORRENT_ASSERT(pp->prev_amount_download == 0);
 			pp->prev_amount_download += aux::numeric_cast<std::uint32_t>(p->statistics().total_payload_download() >> 10);
 			pp->prev_amount_upload += aux::numeric_cast<std::uint32_t>(p->statistics().total_payload_upload() >> 10);
 
@@ -7811,7 +7820,7 @@ namespace libtorrent {
 		{
 #ifdef TORRENT_EXPENSIVE_INVARIANT_CHECKS
 			// make sure this peer is not a dangling pointer
-			TORRENT_ASSERT(m_ses.has_peer(peer));
+//			TORRENT_ASSERT(m_ses.has_peer(peer));
 #endif
 			peer_connection const& p = *peer;
 
@@ -7838,16 +7847,19 @@ namespace libtorrent {
 			if (associated_torrent != this && associated_torrent != nullptr)
 				TORRENT_ASSERT_FAIL();
 		}
-		TORRENT_ASSERT(num_uploads == int(m_num_uploads));
-		TORRENT_ASSERT(seeds == int(m_num_seeds));
-		TORRENT_ASSERT(num_connecting == int(m_num_connecting));
-		TORRENT_ASSERT(num_connecting_seeds == int(m_num_connecting_seeds));
-		TORRENT_ASSERT(int(m_num_uploads) <= num_peers());
-		TORRENT_ASSERT(int(m_num_seeds) <= num_peers());
-		TORRENT_ASSERT(int(m_num_connecting) <= num_peers());
-		TORRENT_ASSERT(int(m_num_connecting_seeds) <= num_peers());
-		TORRENT_ASSERT(int(m_num_connecting) + int(m_num_seeds) >= int(m_num_connecting_seeds));
-		TORRENT_ASSERT(int(m_num_connecting) + int(m_num_seeds) - int(m_num_connecting_seeds) <= num_peers());
+		TORRENT_ASSERT_VAL(num_uploads == int(m_num_uploads), int(m_num_uploads) - num_uploads);
+		TORRENT_ASSERT_VAL(seeds == int(m_num_seeds), int(m_num_seeds) - seeds);
+		TORRENT_ASSERT_VAL(num_connecting == int(m_num_connecting), int(m_num_connecting) - num_connecting);
+		TORRENT_ASSERT_VAL(num_connecting_seeds == int(m_num_connecting_seeds)
+			, int(m_num_connecting_seeds) - num_connecting_seeds);
+		TORRENT_ASSERT_VAL(int(m_num_uploads) <= num_peers(), m_num_uploads - num_peers());
+		TORRENT_ASSERT_VAL(int(m_num_seeds) <= num_peers(), m_num_seeds - num_peers());
+		TORRENT_ASSERT_VAL(int(m_num_connecting) <= num_peers(), int(m_num_connecting) - num_peers());
+		TORRENT_ASSERT_VAL(int(m_num_connecting_seeds) <= num_peers(), int(m_num_connecting_seeds) - num_peers());
+		TORRENT_ASSERT_VAL(int(m_num_connecting) + int(m_num_seeds) >= int(m_num_connecting_seeds)
+			, int(m_num_connecting_seeds) - (int(m_num_connecting) + int(m_num_seeds)));
+		TORRENT_ASSERT_VAL(int(m_num_connecting) + int(m_num_seeds) - int(m_num_connecting_seeds) <= num_peers()
+			, num_peers() - (int(m_num_connecting) + int(m_num_seeds) - int(m_num_connecting_seeds)));
 
 		if (has_picker())
 		{
