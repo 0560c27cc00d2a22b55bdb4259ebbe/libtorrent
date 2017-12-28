@@ -4389,9 +4389,16 @@ namespace libtorrent {
 			try {
 				m_ses.disk_thread().async_stop_torrent(m_storage
 					, std::bind(&torrent::on_torrent_aborted, shared_from_this()));
-			} catch (std::exception const&)
+			}
+			catch (std::exception const& e)
 			{
 				m_storage.reset();
+#ifndef TORRENT_DISABLE_LOGGING
+				debug_log("Failed to flush disk cache: %s", e.what());
+#endif
+				// clients may rely on this alert to be posted, so it's probably a
+				// good idea to post it here, even though we failed
+				// TODO: 3 should this alert have an error code in it?
 				if (alerts().should_post<cache_flushed_alert>())
 					alerts().emplace_alert<cache_flushed_alert>(get_handle());
 			}
@@ -5485,8 +5492,8 @@ namespace libtorrent {
 				trigger_optimistic_unchoke();
 			}
 
-//			TORRENT_ASSERT(pp->prev_amount_upload == 0);
-//			TORRENT_ASSERT(pp->prev_amount_download == 0);
+			TORRENT_ASSERT(pp->prev_amount_upload == 0);
+			TORRENT_ASSERT(pp->prev_amount_download == 0);
 			pp->prev_amount_download += aux::numeric_cast<std::uint32_t>(p->statistics().total_payload_download() >> 10);
 			pp->prev_amount_upload += aux::numeric_cast<std::uint32_t>(p->statistics().total_payload_upload() >> 10);
 
@@ -7809,7 +7816,7 @@ namespace libtorrent {
 
 		TORRENT_ASSERT(is_single_thread());
 		// this fires during disconnecting peers
-//		if (is_paused()) TORRENT_ASSERT(num_peers() == 0 || m_graceful_pause_mode);
+		if (is_paused()) TORRENT_ASSERT(num_peers() == 0 || m_graceful_pause_mode);
 
 		int seeds = 0;
 		int num_uploads = 0;
@@ -7818,10 +7825,6 @@ namespace libtorrent {
 		std::map<piece_block, int> num_requests;
 		for (peer_connection const* peer : *this)
 		{
-#ifdef TORRENT_EXPENSIVE_INVARIANT_CHECKS
-			// make sure this peer is not a dangling pointer
-//			TORRENT_ASSERT(m_ses.has_peer(peer));
-#endif
 			peer_connection const& p = *peer;
 
 			if (p.is_connecting()) ++num_connecting;
