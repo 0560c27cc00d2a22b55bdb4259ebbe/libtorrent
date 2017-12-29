@@ -4442,6 +4442,7 @@ namespace libtorrent {
 		m_connections.clear();
 		m_num_uploads = 0;
 		m_num_connecting = 0;
+		m_num_connecting_seeds = 0;
 	}
 
 	void torrent::set_super_seeding(bool on)

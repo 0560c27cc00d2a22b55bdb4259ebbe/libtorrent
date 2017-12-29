@@ -833,7 +833,6 @@ namespace libtorrent {
 		TORRENT_ASSERT(t || !m_connecting);
 
 		// we should really have dealt with this already
-//		TORRENT_ASSERT(!m_connecting);
 		if (m_connecting)
 		{
 			m_counters.inc_stats_counter(counters::num_peers_half_open, -1);

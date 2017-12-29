@@ -176,7 +176,7 @@ TORRENT_TEST(error_handling)
 		std::printf("\n\n === ROUND %d ===\n\n", i);
 		try
 		{
-			g_alloc_counter = 50 + i;
+			g_alloc_counter = i;
 			using namespace lt;
 			run_test(
 				[](lt::session&, lt::alert const*) {},
