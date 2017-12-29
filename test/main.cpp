@@ -416,6 +416,7 @@ int EXPORT main(int argc, char const* argv[])
 		if (ec)
 		{
 			std::printf("Failed to create unit test directory: %s\n", ec.message().c_str());
+			output_test_log_to_terminal();
 			return 1;
 		}
 		unit_directory_guard unit_dir_guard{unit_dir};
@@ -423,6 +424,7 @@ int EXPORT main(int argc, char const* argv[])
 		if (ec)
 		{
 			std::printf("Failed to change unit test directory: %s\n", ec.message().c_str());
+			output_test_log_to_terminal();
 			return 1;
 		}
 
@@ -529,6 +531,7 @@ int EXPORT main(int argc, char const* argv[])
 	if (num_run == 0)
 	{
 		std::printf("\x1b[31mTEST_ERROR: no unit tests run\x1b[0m\n");
+		output_test_log_to_terminal();
 		return 1;
 	}
 
