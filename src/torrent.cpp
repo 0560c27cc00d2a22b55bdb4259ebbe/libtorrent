@@ -4392,6 +4392,7 @@ namespace libtorrent {
 			}
 			catch (std::exception const& e)
 			{
+				TORRENT_UNUSED(e);
 				m_storage.reset();
 #ifndef TORRENT_DISABLE_LOGGING
 				debug_log("Failed to flush disk cache: %s", e.what());
